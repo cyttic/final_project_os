@@ -1,6 +1,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <time.h>
 #include "sim.h"
 
 menuItem** initMenu(int size){
@@ -35,4 +36,13 @@ int simulation(int clients){
 void close_program(char *msg){
 	perror(msg);
 	exit(-3);
+}
+
+float getTime(){
+	static float internal_timer = (float)clock();
+	internal_timer = internal_timer/CLOCKS_PER_SEC;
+}
+
+void th_foo_client(){
+	printf("hello Gena!\n");
 }

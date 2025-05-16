@@ -10,3 +10,5 @@ menuItem** initMenu(int);
 void printMenu(menuItem**);
 void close_program(char *);
 float getTime();
+void th_foo_client();
+void th_foo_waiter();
