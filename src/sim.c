@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <pthread.h>
+#include <unistd.h>
 #include "sim.h"
 
 menuItem** initMenu(int size){
@@ -38,6 +40,10 @@ void close_program(char *msg){
 	exit(-3);
 }
 
+void alarmEndSimulation(){
+	controlSim(0);
+}
+
 /*
 float getTime(){
 	static float internal_timer = (float)clock();
@@ -45,6 +51,28 @@ float getTime(){
 }
 */
 
-void th_foo_client(){
-	printf("hello Gena!\n");
+pthread_mutex_t mutex_stop_sim;
+int isSimWorks(){
+	int justCheckSim = 1;
+	return controlSim(justCheckSim);
+}
+
+void stopSim(){
+	controlSim(0);
+}
+
+int controlSim(int val){
+	static int sim_status = 1;
+	if(val == 0){//we need to stop simulation and need to use mutex to change variable status
+		pthread_mutex_lock(&mutex_stop_sim);
+		sim_status = val;
+		pthread_mutex_unlock(&mutex_stop_sim);
+	}
+	return sim_status;
+}
+
+void *th_foo_client(void *thread_id){
+	while(isSimWorks()){
+		printf("thread %d\n works", getpid());
+	}
 }

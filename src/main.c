@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <signal.h>
 #include "sim.h"
 #include "timer.h"
 
@@ -12,8 +13,13 @@ int main(int argc , char ** argv){
 		perror("It's must to be 4 argumetns!!\n");
 		return -3;
 	}
+	int time_simulation = 1;
 	int count_waiters = 1;
 	int count_clients = 1;
+
+	//we're using signal SIGALRM to hande function for stop clients and waiters threads
+	signal(SIGALRM, alarmEndSimulation);
+	alarm(time_simulation);
 
 	pthread_t waiters_th[count_waiters];
 	pthread_t clients_th[count_clients];
@@ -22,13 +28,14 @@ int main(int argc , char ** argv){
 	for(int i = 0; i < count_clients; ++i){
 		long t;
 		pthread_create(&clients_th[i], NULL, th_foo_client,&t);
+		pthread_join(clients_th[i],NULL);
 	}
 
 
 	//simulation(42);
-	sleep(2);
 	menuItem **menu = initMenu(6);
 	printMenu(menu);
+
 
 	printf("%f\n",getTimeWork());
 	return 0;
