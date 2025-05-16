@@ -21,8 +21,7 @@ int main(int argc , char ** argv){
 	//initialization a clients threads
 	for(int i = 0; i < count_clients; ++i){
 		long t;
-		if (pthread_create(&clients_th[i], NULL, th_foo_client,&t))
-			close_program("Unsucessful attempt to create a thread for client number %d\n",i);
+		pthread_create(&clients_th[i], NULL, th_foo_client,&t);
 	}
 
 

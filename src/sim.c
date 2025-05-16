@@ -38,10 +38,12 @@ void close_program(char *msg){
 	exit(-3);
 }
 
+/*
 float getTime(){
 	static float internal_timer = (float)clock();
 	internal_timer = internal_timer/CLOCKS_PER_SEC;
 }
+*/
 
 void th_foo_client(){
 	printf("hello Gena!\n");
