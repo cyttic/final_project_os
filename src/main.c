@@ -9,6 +9,8 @@ int main(int argc , char ** argv){
 		perror("It's must to be 3 argumetns!!\n");
 		return -3;
 	}
-	simulation(42);
+	//simulation(42);
+	menuItem **menu = initMenu();
+	printMenu(menu);
 	return 0;
 }
