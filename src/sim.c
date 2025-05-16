@@ -5,8 +5,8 @@
 
 menuItem** initMenu(int size){
 	if (size < 5 || size > 7)
-		close_pprogram("Size of menu must be between 5 and 7 items\n");
-	char names[size+1][10] = {"Pizza","Salad","Hamburger","Spagetti","Pie","Milkshake","Falafel"};
+		close_program("Size of menu must be between 5 and 7 items\n");
+	char names[7][10] = {"Pizza","Salad","Hamburger","Spagetti","Pie","Milkshake","Falafel"};
 	menuItem **items = malloc(sizeof(*items)*size);
 	for(int i = 0; i < size; ++i){
 		items[i] = malloc(sizeof(menuItem*));
@@ -15,7 +15,7 @@ menuItem** initMenu(int size){
 		items[i]->name = malloc(sizeof(names[i])+1);
 		strcpy(items[i]->name,names[i]);
 	}
-	items[size+1] = NULL;
+	items[size] = NULL;
 	return items;
 }
 

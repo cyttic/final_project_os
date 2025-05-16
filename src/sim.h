@@ -9,3 +9,4 @@ int simulation(int);
 menuItem** initMenu(int);
 void printMenu(menuItem**);
 void close_program(char *);
+float getTime();
