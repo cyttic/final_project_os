@@ -6,5 +6,6 @@ typedef struct{
 }menuItem;
 
 int simulation(int);
-menuItem** initMenu();
+menuItem** initMenu(int);
 void printMenu(menuItem**);
+void close_program(char *);

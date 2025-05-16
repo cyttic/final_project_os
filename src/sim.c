@@ -3,17 +3,19 @@
 #include <stdio.h>
 #include "sim.h"
 
-menuItem** initMenu(){
-	char names[7][10] = {"Pizza","Salad","Hamburger","Spagetti","Pie","Milkshake","Falafel"};
-	menuItem **items = malloc(sizeof(*items)*7);
-	for(int i = 0; i < 6; ++i){
+menuItem** initMenu(int size){
+	if (size < 5 || size > 7)
+		close_pprogram("Size of menu must be between 5 and 7 items\n");
+	char names[size+1][10] = {"Pizza","Salad","Hamburger","Spagetti","Pie","Milkshake","Falafel"};
+	menuItem **items = malloc(sizeof(*items)*size);
+	for(int i = 0; i < size; ++i){
 		items[i] = malloc(sizeof(menuItem*));
 		items[i]->id = i+1;//just set up id of items in the loop
 		items[i]->price = rand()%20 + 3;//set up price for item via rand
 		items[i]->name = malloc(sizeof(names[i])+1);
 		strcpy(items[i]->name,names[i]);
 	}
-	items[7] = NULL;
+	items[size+1] = NULL;
 	return items;
 }
 
@@ -28,4 +30,9 @@ int simulation(int clients){
 		//we are still working untill we have at least one client;
 	}
 	return 0;
+}
+
+void close_program(char *msg){
+	perror(msg);
+	exit(-3);
 }

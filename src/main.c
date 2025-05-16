@@ -10,7 +10,7 @@ int main(int argc , char ** argv){
 		return -3;
 	}
 	//simulation(42);
-	menuItem **menu = initMenu();
+	menuItem **menu = initMenu(6);
 	printMenu(menu);
 	return 0;
 }
