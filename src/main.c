@@ -5,7 +5,7 @@
 #include "sim.h"
 #include "timer.h"
 
-#helloROMAN
+//helloROMAN
 int main(int argc , char ** argv){
 	menuItem item;
 
