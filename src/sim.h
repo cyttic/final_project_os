@@ -12,12 +12,20 @@ typedef struct{
 	int done;
 }orderItem;
 
-int simulation(int);
-//menuItem** initMenu(int);
+//menu
 menuItem** _controlMenu(int);
 void setMenu(int);
 menuItem** getMenu();
-orderItem **initOrderBoard(int);
+//orders
+orderItem** _controlOrderBoard(int);
+void setOrderBoard(int);
+orderItem** getOrderBoard();
+//size menu - it would be easely to save this value then call getMenu with mutexs
+int _controlSizeMenu(int);
+void setSizeMenu(int);
+int getSizeMenu();
+
+
 void printMenu(menuItem**);
 void close_program(char *);
 float getTime();

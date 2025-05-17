@@ -12,9 +12,10 @@
 //function with symbol _ are for internal use only!
 menuItem** _controlMenu(int size){
 	static menuItem **items;
-	if (size >= 0){//size less of 0 means there is setMenu call
+	if (size >= 1){//size less of 0 means there is setMenu call
 		if (size < 5 || size > 7)
 			close_program("Size of menu must be between 5 and 7 items\n");
+		setSizeMenu(size);
 		char names[7][10] = {"Pizza","Salad","Hamburger","Spagetti","Pie","Milkshake","Falafel"};
 		//menuItem **items = malloc(sizeof(menuItem*)*size);
 		//We need to use shared memory according the task, but in this realisation we're using threads instead of a process, and it would be fine without it
@@ -32,6 +33,8 @@ menuItem** _controlMenu(int size){
 }
 
 void setMenu(int size){
+	if (size < 1)
+		close_program("Wrong argument for setMenu(int) call\n");
 	_controlMenu(size);
 }
 
@@ -39,16 +42,45 @@ menuItem** getMenu(){
 	return _controlMenu(-1);
 }
 
-orderItem **initOrderBoard(int size){
-	//we use threads, so we can get just malloc to allocate memory 
-	orderItem **items = malloc(sizeof(orderItem**));
-	for(int i = 0; i < size; ++i){
-		items[i] = malloc(sizeof(orderItem*));
-		items[i]->customerId = i;
-		items[i]->itemId = -1; //newermind
-		items[i]->amount = -1; //newermind
-		items[i]->done = 1;    // 1 - finished, 0 - does not
+orderItem** _controlOrderBoard(int size){
+	static orderItem **items;
+	if (size > 0){//if parametr size <= 0 then it's call getOrderBoard()
+		//we use threads, so we can get just malloc to allocate memory 
+		items = malloc(sizeof(orderItem**));
+		for(int i = 0; i < size; ++i){
+			items[i] = malloc(sizeof(orderItem*));
+			items[i]->customerId = i;
+			items[i]->itemId = -1; //newermind
+			items[i]->amount = -1; //newermind
+			items[i]->done = 1;    // 1 - finished, 0 - does not
+		}	
 	}
+	return items;
+}
+
+void setOrderBoard(int size){
+	if (size < 1)
+		close_program("Wrong argument for setOrderBoard(int) call\n");
+	_controlOrderBoard(size);
+}
+
+orderItem** getOrderBoard(){
+	return _controlOrderBoard(-1);
+}
+
+int _controlSizeMenu(int size){
+	static int size_menu;
+	if (size > 0)
+		size_menu = size;
+	return size_menu;
+}
+
+void setSizeMenu(int size){
+	_controlSizeMenu(size);
+}
+
+int getSizeMenu(){
+	return _controlSizeMenu(-1);
 }
 
 void printMenu(menuItem **menu){
@@ -100,13 +132,53 @@ int controlSim(int val){
 	return sim_status;
 }
 
+pthread_mutex_t mutex_client_waiter;
 void *th_foo_client(void *thread_id){
 	int num = *(int *)thread_id;
 	printThreadMessage("%f Customer %d: created PID %d PPID %d\n", getTimeWork(),num,getpid(),getppid());
-	printf("THREAD %d CAN READ MENU: %s\n", num, getMenu()[3]->name);
+	//printf("THREAD %d CAN READ MENU: %s\n", num, getMenu()[3]->name);
+	//a)if not elapsed simulation time
 	while(isSimWorks()){
-		//printf("thread %d\n works", getpid());
+		//b)sleep for 3 to 6 seconds randomly
+		int time_sleep = rand()%6+3;
+		sleep(time_sleep);
+		//c)Read the menu (1 second);
+		//d)If the previous order has not yet been done, loop to (a)
+		int isContinue = 0;
+		pthread_mutex_lock(&mutex_client_waiter);
+
+		if(getOrderBoard()[num]->done == 0)
+			isContinue = 1;//it's need because need to unlock mutex before Continue
+		pthread_mutex_unlock(&mutex_client_waiter);
+		if (isContinue)
+			continue;
+		//e)with the probability 0.5 client will order 
+		if (rand()%2){
+			//i)randomly choose item and amount
+			int item = rand()%getSizeMenu();
+			int amount = rand()%4+1;
+			char name_item[20];
+			//ii)write the order to the board
+			pthread_mutex_lock(&mutex_client_waiter);
+			getOrderBoard()[num]->itemId = item;
+			getOrderBoard()[num]->amount = amount;
+			getOrderBoard()[num]->done = 0;
+			strcpy(name_item, getMenu()[item]->name);
+			pthread_mutex_unlock(&mutex_client_waiter);
+			printThreadMessage("%f Customer %d: reads a menu about %s(ordered, amount %d)\n", getTimeWork(),num, name_item, amount);
+		}else{
+		//f)with the probability 0.5 client does not order
+		//we can choose random dish for this message, because it will not be ordered
+		char name_item[20];
+		pthread_mutex_lock(&mutex_client_waiter); 
+		strcpy(name_item, getMenu()[rand()%getSizeMenu()]->name);
+		pthread_mutex_unlock(&mutex_client_waiter);
+		printThreadMessage("%f Customer %d: reads a menu about %s(doesn't want to order)\n", getTimeWork(),num, name_item);
+		sleep(1);//there is sleep from (c)
+		//g)loop to (a)
+		}
 	}
+	printThreadMessage("%f Customer %d: PID %d end work PPID %d\n", getTimeWork(), getpid(), getppid());
 }
 
 void *getShmat(int size){

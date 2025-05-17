@@ -12,7 +12,7 @@ int main(int argc , char ** argv){
 		perror("It's must to be 4 argumetns!!\n");
 		return -3;
 	}
-	int time_simulation = 1;
+	int time_simulation = 20;
 	int count_waiters = 1;
 	int count_clients = 1;
 
@@ -26,8 +26,7 @@ int main(int argc , char ** argv){
 	setMenu(6);
 	printMenu(getMenu());
 	//create orders board
-	orderItem **orders = initOrderBoard(1);
-	
+	setOrderBoard(2);
 	//initialization a clients threads
 	printThreadMessage("%f Main process start creating sub-process\n", getTimeWork());
 	for(int i = 0; i < count_clients; ++i){
@@ -36,6 +35,7 @@ int main(int argc , char ** argv){
 		pthread_join(clients_th[i],NULL);
 	}
 	
-	printf("%f\n",getTimeWork());
+	printThreadMessage("%f Main ID %d end work\n",getTimeWork(), getpid());
+	printThreadMessage("%f End of simulation\n");
 	return 0;
 }
