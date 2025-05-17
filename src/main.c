@@ -22,7 +22,11 @@ int main(int argc , char ** argv){
 
 	pthread_t waiters_th[count_waiters];
 	pthread_t clients_th[count_clients];
-
+	//create menu
+	setMenu(6);
+	printMenu(getMenu());
+	//create orders board
+	orderItem **orders = initOrderBoard(1);
 	
 	//initialization a clients threads
 	printThreadMessage("%f Main process start creating sub-process\n", getTimeWork());
@@ -32,12 +36,6 @@ int main(int argc , char ** argv){
 		pthread_join(clients_th[i],NULL);
 	}
 	
-	
-	//simulation(42);
-	menuItem **menu = initMenu(6);
-	printMenu(menu);
-
-
 	printf("%f\n",getTimeWork());
 	return 0;
 }

@@ -9,22 +9,46 @@
 #include "timer.h"
 #include "sim.h"
 
-menuItem** initMenu(int size){
-	if (size < 5 || size > 7)
-		close_program("Size of menu must be between 5 and 7 items\n");
-	char names[7][10] = {"Pizza","Salad","Hamburger","Spagetti","Pie","Milkshake","Falafel"};
-	//menuItem **items = malloc(sizeof(menuItem*)*size);
-	//We need to use shared memory according the task, but in this realisation we're using threads instead of a process, and it would be fine without it
-	menuItem **items = getShmat(sizeof(menuItem**));
-	for(int i = 0; i < size; ++i){
-		items[i] = malloc(sizeof(menuItem*));
-		items[i]->id = i+1;//just set up id of items in the loop
-		items[i]->price = rand()%20 + 3;//set up price for item via rand
-		items[i]->name = malloc(sizeof(names[i])+1);
-		strcpy(items[i]->name,names[i]);
+//function with symbol _ are for internal use only!
+menuItem** _controlMenu(int size){
+	static menuItem **items;
+	if (size >= 0){//size less of 0 means there is setMenu call
+		if (size < 5 || size > 7)
+			close_program("Size of menu must be between 5 and 7 items\n");
+		char names[7][10] = {"Pizza","Salad","Hamburger","Spagetti","Pie","Milkshake","Falafel"};
+		//menuItem **items = malloc(sizeof(menuItem*)*size);
+		//We need to use shared memory according the task, but in this realisation we're using threads instead of a process, and it would be fine without it
+		items = getShmat(sizeof(menuItem**));
+		for(int i = 0; i < size; ++i){
+			items[i] = malloc(sizeof(menuItem*));
+			items[i]->id = i+1;//just set up id of items in the loop
+			items[i]->price = rand()%20 + 3;//set up price for item via rand
+			items[i]->name = malloc(sizeof(names[i])+1);
+			strcpy(items[i]->name,names[i]);
+		}
+		items[size] = NULL;
 	}
-	items[size] = NULL;
 	return items;
+}
+
+void setMenu(int size){
+	_controlMenu(size);
+}
+
+menuItem** getMenu(){
+	return _controlMenu(-1);
+}
+
+orderItem **initOrderBoard(int size){
+	//we use threads, so we can get just malloc to allocate memory 
+	orderItem **items = malloc(sizeof(orderItem**));
+	for(int i = 0; i < size; ++i){
+		items[i] = malloc(sizeof(orderItem*));
+		items[i]->customerId = i;
+		items[i]->itemId = -1; //newermind
+		items[i]->amount = -1; //newermind
+		items[i]->done = 1;    // 1 - finished, 0 - does not
+	}
 }
 
 void printMenu(menuItem **menu){
@@ -79,7 +103,7 @@ int controlSim(int val){
 void *th_foo_client(void *thread_id){
 	int num = *(int *)thread_id;
 	printThreadMessage("%f Customer %d: created PID %d PPID %d\n", getTimeWork(),num,getpid(),getppid());
-	printf("THERE IS THREAD %d\n", num);
+	printf("THREAD %d CAN READ MENU: %s\n", num, getMenu()[3]->name);
 	while(isSimWorks()){
 		//printf("thread %d\n works", getpid());
 	}

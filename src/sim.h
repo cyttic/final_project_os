@@ -5,8 +5,19 @@ typedef struct{
 	int orders;
 }menuItem;
 
+typedef struct{
+	int customerId;
+	int itemId;
+	int amount;
+	int done;
+}orderItem;
+
 int simulation(int);
-menuItem** initMenu(int);
+//menuItem** initMenu(int);
+menuItem** _controlMenu(int);
+void setMenu(int);
+menuItem** getMenu();
+orderItem **initOrderBoard(int);
 void printMenu(menuItem**);
 void close_program(char *);
 float getTime();
