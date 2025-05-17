@@ -8,7 +8,6 @@
 int main(int argc , char ** argv){
 	menuItem item;
 
-	printf("%f\n", getTimeWork());
 	if (argc != 5){
 		perror("It's must to be 4 argumetns!!\n");
 		return -3;
@@ -24,14 +23,16 @@ int main(int argc , char ** argv){
 	pthread_t waiters_th[count_waiters];
 	pthread_t clients_th[count_clients];
 
+	
 	//initialization a clients threads
+	printThreadMessage("%f Main process start creating sub-process\n", getTimeWork());
 	for(int i = 0; i < count_clients; ++i){
-		long t;
+		int t = i;
 		pthread_create(&clients_th[i], NULL, th_foo_client,&t);
 		pthread_join(clients_th[i],NULL);
 	}
-
-
+	
+	
 	//simulation(42);
 	menuItem **menu = initMenu(6);
 	printMenu(menu);

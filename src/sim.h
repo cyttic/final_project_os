@@ -16,3 +16,7 @@ void alarmEndSimulation();
 int isSimWorks();
 void stopSim();
 int controlSim(int);
+//create a shared memory for struct menu
+void *getShmat(int);
+//display to output must be thread-safe operation
+void printThreadMessage(const char*, ...);

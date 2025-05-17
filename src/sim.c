@@ -4,13 +4,18 @@
 #include <time.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sys/shm.h>
+#include <stdarg.h>
+#include "timer.h"
 #include "sim.h"
 
 menuItem** initMenu(int size){
 	if (size < 5 || size > 7)
 		close_program("Size of menu must be between 5 and 7 items\n");
 	char names[7][10] = {"Pizza","Salad","Hamburger","Spagetti","Pie","Milkshake","Falafel"};
-	menuItem **items = malloc(sizeof(*items)*size);
+	//menuItem **items = malloc(sizeof(menuItem*)*size);
+	//We need to use shared memory according the task, but in this realisation we're using threads instead of a process, and it would be fine without it
+	menuItem **items = getShmat(sizeof(menuItem**));
 	for(int i = 0; i < size; ++i){
 		items[i] = malloc(sizeof(menuItem*));
 		items[i]->id = i+1;//just set up id of items in the loop
@@ -72,7 +77,37 @@ int controlSim(int val){
 }
 
 void *th_foo_client(void *thread_id){
+	int num = *(int *)thread_id;
+	printThreadMessage("%f Customer %d: created PID %d PPID %d\n", getTimeWork(),num,getpid(),getppid());
+	printf("THERE IS THREAD %d\n", num);
 	while(isSimWorks()){
-		printf("thread %d\n works", getpid());
+		//printf("thread %d\n works", getpid());
 	}
+}
+
+void *getShmat(int size){
+	size_t SIZE_MENUITEM = size;
+	key_t key;
+	int shmid;
+	menuItem *items;
+	
+	key = ftok(".", 1234);
+	if (key == -1)
+		close_program("ftok returned error");
+	shmid = shmget(key, SIZE_MENUITEM, IPC_EXCL | 0666);
+	if (shmid == -1)
+		close_program("shmget returned error");
+	items = shmat(shmid,NULL,0);
+	return items;
+}
+
+pthread_mutex_t mutex_print;
+//using vprintf instead of printf much more ease to pass arguments to print out
+void printThreadMessage(const char *message, ...){
+	pthread_mutex_lock(&mutex_print);
+	va_list args;
+	va_start(args,message);
+	vprintf(message,args);
+	va_end(args);
+	pthread_mutex_unlock(&mutex_print);
 }
