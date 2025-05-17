@@ -14,7 +14,7 @@ int main(int argc , char ** argv){
 	}
 	int time_simulation = 20;
 	int count_waiters = 1;
-	int count_clients = 1;
+	int count_clients = 3;
 
 	//we're using signal SIGALRM to hande function for stop clients and waiters threads
 	signal(SIGALRM, alarmEndSimulation);
@@ -26,14 +26,16 @@ int main(int argc , char ** argv){
 	setMenu(6);
 	printMenu(getMenu());
 	//create orders board
-	setOrderBoard(2);
+	setOrderBoard(count_clients);
 	//initialization a clients threads
 	printThreadMessage("%f Main process start creating sub-process\n", getTimeWork());
 	for(int i = 0; i < count_clients; ++i){
-		int t = i;
-		pthread_create(&clients_th[i], NULL, th_foo_client,&t);
-		pthread_join(clients_th[i],NULL);
+		//int t = i;
+		pthread_create(&clients_th[i], NULL, th_foo_client,(void*)i);
+		//pthread_join(clients_th[i],NULL);
 	}
+	for(int i = 0; i < count_clients; ++i)
+		pthread_join(clients_th[i],NULL);
 	
 	printThreadMessage("%f Main ID %d end work\n",getTimeWork(), getpid());
 	printThreadMessage("%f End of simulation\n");

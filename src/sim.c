@@ -134,11 +134,13 @@ int controlSim(int val){
 
 pthread_mutex_t mutex_client_waiter;
 void *th_foo_client(void *thread_id){
-	int num = *(int *)thread_id;
-	printThreadMessage("%f Customer %d: created PID %d PPID %d\n", getTimeWork(),num,getpid(),getppid());
+	int num = (int)thread_id;
+	printThreadMessage("%f Customer %d: created PID %d PPID %d\n", getTimeWork(),num,pthread_self(),getppid());
 	//printf("THREAD %d CAN READ MENU: %s\n", num, getMenu()[3]->name);
 	//a)if not elapsed simulation time
 	while(isSimWorks()){
+		sleep(2);
+		
 		//b)sleep for 3 to 6 seconds randomly
 		int time_sleep = rand()%6+3;
 		sleep(time_sleep);
@@ -146,7 +148,6 @@ void *th_foo_client(void *thread_id){
 		//d)If the previous order has not yet been done, loop to (a)
 		int isContinue = 0;
 		pthread_mutex_lock(&mutex_client_waiter);
-
 		if(getOrderBoard()[num]->done == 0)
 			isContinue = 1;//it's need because need to unlock mutex before Continue
 		pthread_mutex_unlock(&mutex_client_waiter);
@@ -177,8 +178,9 @@ void *th_foo_client(void *thread_id){
 		sleep(1);//there is sleep from (c)
 		//g)loop to (a)
 		}
+		
 	}
-	printThreadMessage("%f Customer %d: PID %d end work PPID %d\n", getTimeWork(), getpid(), getppid());
+	printThreadMessage("%f Customer ID %d: PID %d end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
 }
 
 void *getShmat(int size){
