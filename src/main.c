@@ -12,7 +12,7 @@ int main(int argc , char ** argv){
 		perror("It's must to be 4 argumetns!!\n");
 		return -3;
 	}
-	int time_simulation = 20;
+	int time_simulation = atoi(argv[1]);
 	int count_waiters = 1;
 	int count_clients = 3;
 
