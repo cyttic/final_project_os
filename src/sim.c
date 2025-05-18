@@ -54,6 +54,7 @@ orderItem** _controlOrderBoard(int size){
 			items[i]->amount = -1; //newermind
 			items[i]->done = 1;    // 1 - finished, 0 - does not
 		}	
+		items[size] = NULL;
 	}
 	return items;
 }
@@ -136,7 +137,6 @@ pthread_mutex_t mutex_client_waiter;
 void *th_foo_client(void *thread_id){
 	long num = (long)thread_id;
 	printThreadMessage("%f Customer %d: created PID %d PPID %d\n", getTimeWork(),num,pthread_self(),getppid());
-	//printf("THREAD %d CAN READ MENU: %s\n", num, getMenu()[3]->name);
 	//a)if not elapsed simulation time
 	while(isSimWorks()){
 		sleep(2);
@@ -183,6 +183,35 @@ void *th_foo_client(void *thread_id){
 	printThreadMessage("%f Customer ID %d: PID %d end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
 }
 
+void *th_foo_waiter(void *thread_id){
+	long num = (long)(thread_id);
+	printThreadMessage("%f Waiter %d: created PID %d PPID %d\n", getTimeWork(),num,pthread_self(),getppid());
+	//a)if not elapsed simulation time
+	while(isSimWorks()){
+		//b)sleep for 1-2 seconds randomly
+		sleep(1+rand()%2);
+		//c)read an order from the "order board"
+		pthread_mutex_lock(&mutex_client_waiter);
+		orderItem **orders = getOrderBoard();
+		//for(int i = 0;i < 
+		int i = 0;
+		while(orders[i] != NULL){
+			//d) and e): if there is row that isn't Done
+			if (orders[i]->done == 0){
+				//i)add the amount ordered to the totals in main menu
+				getMenu()[orders[i]->itemId]->orders += orders[i]->amount;
+				//ii)mark the order as Done
+				orders[i]->done = 1;
+				printThreadMessage("%f Waiter %d: performs the order of customer ID %d (%d %s)\n", getTimeWork(), num,i,orders[i]->amount, getMenu()[orders[i]->itemId]->name);
+			}
+			i++;
+		}
+		pthread_mutex_unlock(&mutex_client_waiter);
+	}
+	printThreadMessage("%f Waiter ID %d: PID %d end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
+}
+
+
 void *getShmat(int size){
 	size_t SIZE_MENUITEM = size;
 	key_t key;
@@ -208,4 +237,21 @@ void printThreadMessage(const char *message, ...){
 	vprintf(message,args);
 	va_end(args);
 	pthread_mutex_unlock(&mutex_print);
+}
+
+float getTotal(){
+	float total = 0.0;
+	menuItem **menu = getMenu();
+	for(int i = 0; i < getSizeMenu(); ++i)
+		total += menu[i]->price + menu[i]->orders;
+	return total;
+
+}
+
+int getCountItems(){
+	int total = 0;
+	menuItem **menu = getMenu();
+	for(int i = 0; i < getSizeMenu(); ++i)
+		total += menu[i]-> orders;
+	return total;
 }

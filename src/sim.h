@@ -25,12 +25,13 @@ int _controlSizeMenu(int);
 void setSizeMenu(int);
 int getSizeMenu();
 
-
 void printMenu(menuItem**);
 void close_program(char *);
 float getTime();
-void *th_foo_client();
-void *th_foo_waiter();
+//most work here
+void *th_foo_client(void *);
+void *th_foo_waiter(void *);
+
 void alarmEndSimulation();
 int isSimWorks();
 void stopSim();
@@ -39,3 +40,6 @@ int controlSim(int);
 void *getShmat(int);
 //display to output must be thread-safe operation
 void printThreadMessage(const char*, ...);
+//count result
+float getTotal();
+int getCountItems();
