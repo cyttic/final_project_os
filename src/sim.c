@@ -134,7 +134,7 @@ int controlSim(int val){
 
 pthread_mutex_t mutex_client_waiter;
 void *th_foo_client(void *thread_id){
-	int num = (int)thread_id;
+	long num = (long)thread_id;
 	printThreadMessage("%f Customer %d: created PID %d PPID %d\n", getTimeWork(),num,pthread_self(),getppid());
 	//printf("THREAD %d CAN READ MENU: %s\n", num, getMenu()[3]->name);
 	//a)if not elapsed simulation time

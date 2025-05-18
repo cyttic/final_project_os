@@ -29,11 +29,10 @@ int main(int argc , char ** argv){
 	setOrderBoard(count_clients);
 	//initialization a clients threads
 	printThreadMessage("%f Main process start creating sub-process\n", getTimeWork());
-	for(int i = 0; i < count_clients; ++i){
-		//int t = i;
+	//using type "long" in the loop For to avoid a warings
+	for(long i = 0; i < count_clients; ++i)
 		pthread_create(&clients_th[i], NULL, th_foo_client,(void*)i);
-		//pthread_join(clients_th[i],NULL);
-	}
+	
 	for(int i = 0; i < count_clients; ++i)
 		pthread_join(clients_th[i],NULL);
 	
