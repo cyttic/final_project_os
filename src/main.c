@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <signal.h>
+#include <stdlib.h>
 #include "sim.h"
 #include "timer.h"
 
@@ -13,8 +14,9 @@ int main(int argc , char ** argv){
 		return -3;
 	}
 	int time_simulation = atoi(argv[1]);
-	int count_waiters = 1;
-	int count_clients = 3;
+	int size_menu       = atoi(argv[2]);
+	int count_clients   = atoi(argv[3]);
+	int count_waiters   = atoi(argv[4]);
 
 	//we're using signal SIGALRM to hande function for stop clients and waiters threads
 	signal(SIGALRM, alarmEndSimulation);
@@ -23,7 +25,7 @@ int main(int argc , char ** argv){
 	pthread_t waiters_th[count_waiters];
 	pthread_t clients_th[count_clients];
 	//create menu
-	setMenu(6);
+	setMenu(size_menu);
 	printMenu(getMenu());
 	//create orders board
 	setOrderBoard(count_clients);
@@ -40,7 +42,7 @@ int main(int argc , char ** argv){
 	for(int i = 0; i < count_waiters; ++i)
 		pthread_join(waiters_th[i],NULL);
 	
-	printThreadMessage("%f Total orders %d, for an amount %.2f NIL\n",getCountItems(), getTotal());
+	printThreadMessage("%f Total orders %d, for an amount %.2f NIL\n",getTimeWork(), getCountItems(), getTotal());
 	printThreadMessage("%f Main ID %d end work\n",getTimeWork(), getpid());
 	printThreadMessage("%f End of simulation\n");
 	return 0;
