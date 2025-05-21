@@ -87,7 +87,7 @@ int getSizeMenu(){
 void printMenu(menuItem **menu){
 	int size = getSizeMenu();
 	printf("======================Menu list=====================\n");
-	printf("\n%-7s %-12s %-8s %-12s\n", "Id", "Name", "Price","Order");
+	printf("%-7s %-12s %-8s %-12s\n", "Id", "Name", "Price","Order");
 	for(int i = 0; i < size; ++i){
 		//if(menu[i] == NULL) break;
 		printf("%-7d %-12s %-8.2f %-12d\n",
@@ -149,7 +149,7 @@ int controlSim(int val){
 pthread_mutex_t mutex_client_waiter;
 void *th_foo_client(void *thread_id){
 	long num = (long)thread_id;
-	printThreadMessage("%f Customer %d: created PID %d PPID %d\n", getTimeWork(),num,pthread_self(),getppid());
+	printThreadMessage("%.3f Customer %d: created PID %llu PPID %d\n", getTimeWork(),num,pthread_self(),getppid());
 	//a)if not elapsed simulation time
 	while(isSimWorks()){
 		sleep(2);
@@ -180,7 +180,7 @@ void *th_foo_client(void *thread_id){
 			getOrderBoard()[num]->done = 0;
 			strcpy(name_item, getMenu()[item]->name);
 			pthread_mutex_unlock(&mutex_client_waiter);
-			printThreadMessage("%f Customer %d: reads a menu about %s(ordered, amount %d)\n", getTimeWork(),num, name_item, amount);
+			printThreadMessage("%.3f Customer %d: reads a menu about %s(ordered, amount %d)\n", getTimeWork(),num, name_item, amount);
 		}else{
 		//f)with the probability 0.5 client does not order
 		//we can choose random dish for this message, because it will not be ordered
@@ -188,18 +188,18 @@ void *th_foo_client(void *thread_id){
 		pthread_mutex_lock(&mutex_client_waiter); 
 		strcpy(name_item, getMenu()[rand()%getSizeMenu()]->name);
 		pthread_mutex_unlock(&mutex_client_waiter);
-		printThreadMessage("%f Customer %d: reads a menu about %s(doesn't want to order)\n", getTimeWork(),num, name_item);
+		printThreadMessage("%.3f Customer %d: reads a menu about %s(doesn't want to order)\n", getTimeWork(),num, name_item);
 		sleep(1);//there is sleep from (c)
 		//g)loop to (a)
 		}
 		
 	}
-	printThreadMessage("%f Customer ID %d: PID %d end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
+	printThreadMessage("%.3f Customer ID %d: PID %llu end work PPID %d\n",num, getTimeWork(), pthread_self(), getppid());
 }
 
 void *th_foo_waiter(void *thread_id){
 	long num = (long)(thread_id);
-	printThreadMessage("%f Waiter %d: created PID %d PPID %d\n", getTimeWork(),num,pthread_self(),getppid());
+	printThreadMessage("%.3f Waiter %d: created PID %llu PPID %d\n", getTimeWork(),num,pthread_self(),getppid());
 	//a)if not elapsed simulation time
 	while(isSimWorks()){
 		//b)sleep for 1-2 seconds randomly
@@ -216,13 +216,13 @@ void *th_foo_waiter(void *thread_id){
 				getMenu()[orders[i]->itemId]->orders += orders[i]->amount;
 				//ii)mark the order as Done
 				orders[i]->done = 1;
-				printThreadMessage("%f Waiter %d: performs the order of customer ID %d (%d %s)\n", getTimeWork(), num,i,orders[i]->amount, getMenu()[orders[i]->itemId]->name);
+				printThreadMessage("%.3f Waiter %d: performs the order of customer ID %d (%d %s)\n", getTimeWork(), num,i,orders[i]->amount, getMenu()[orders[i]->itemId]->name);
 			}
 			i++;
 		}
 		pthread_mutex_unlock(&mutex_client_waiter);
 	}
-	printThreadMessage("%f Waiter ID %d: PID %d end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
+	printThreadMessage("%.3f Waiter ID %d: PID %llu end work PPID %d\n",num, getTimeWork(), pthread_self(), getppid());
 }
 
 

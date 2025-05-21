@@ -31,7 +31,7 @@ int main(int argc , char ** argv){
 	//create orders board
 	setOrderBoard(count_clients);
 	//initialization a clients threads
-	printThreadMessage("%f Main process start creating sub-process\n", getTimeWork());
+	printThreadMessage("%.3f Main process start creating sub-process\n", getTimeWork());
 	//using type "long" in the loop For to avoid a warings
 	for(long i = 0; i < count_clients; ++i)
 		pthread_create(&clients_th[i], NULL, th_foo_client,(void*)i);
@@ -46,7 +46,7 @@ int main(int argc , char ** argv){
 		pthread_join(waiters_th[i],NULL);
 	printMenu(getMenu());
 	printThreadMessage("Total orders %d, for an amount %.2f NIL\n",getCountItems(), getTotal());
-	printThreadMessage("%f Main ID %d end work\n",getTimeWork(), getpid());
-	printThreadMessage("%f End of simulation\n");
+	printThreadMessage("%.3f Main ID %d end work\n",getTimeWork(), getpid());
+	printThreadMessage("%.3f End of simulation\n");
 	return 0;
 }

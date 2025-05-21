@@ -17,7 +17,8 @@ struct timespec firstTime(){
 double getTimeWork(){
 	struct timespec dif;
 	clock_gettime(CLOCK_REALTIME, &dif);
-	double result = (dif.tv_sec - firstTime().tv_sec) + (dif.tv_nsec - firstTime().tv_nsec)/1000000000.0;
+	//double result = (dif.tv_sec - firstTime().tv_sec) + (dif.tv_nsec - firstTime().tv_nsec)/1000000000.0;
+	double result = (dif.tv_sec - firstTime().tv_sec) +  (dif.tv_nsec - firstTime().tv_nsec)/1000000.0;
 	//this check "result >= 0.0" needs because first run of function returns -0.0
 	return result >= 0.0 ? result: 0.0;
 }
