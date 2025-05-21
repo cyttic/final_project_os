@@ -46,7 +46,7 @@ orderItem** _controlOrderBoard(int size){
 	static orderItem **items;
 	if (size > 0){//if parametr size <= 0 then it's call getOrderBoard()
 		//we use threads, so we can get just malloc to allocate memory 
-		items = malloc(sizeof(orderItem**));
+		items = malloc(sizeof(orderItem*)*size);
 		for(int i = 0; i < size; ++i){
 			items[i] = malloc(sizeof(orderItem*));
 			items[i]->customerId = i;
@@ -168,6 +168,7 @@ void *th_foo_client(void *thread_id){
 			continue;
 		//e)with the probability 0.5 client will order 
 		if (rand()%2){
+			
 			//i)randomly choose item and amount
 			int item = rand()%getSizeMenu();
 			int amount = rand()%4+1;

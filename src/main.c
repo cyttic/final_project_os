@@ -38,8 +38,10 @@ int main(int argc , char ** argv){
 	for(long i = 0; i < count_waiters; ++i)
 		pthread_create(&waiters_th[i], NULL, th_foo_waiter,(void*)i);
 
+	
 	for(int i = 0; i < count_clients; ++i)
 		pthread_join(clients_th[i],NULL);
+	
 	for(int i = 0; i < count_waiters; ++i)
 		pthread_join(waiters_th[i],NULL);
 	printMenu(getMenu());
