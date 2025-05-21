@@ -85,9 +85,22 @@ int getSizeMenu(){
 }
 
 void printMenu(menuItem **menu){
-	for(int i = 0; menu[i] != NULL; ++i){
-		printf("%d %s\n",menu[i]->id, menu[i]->name);
+	int size = getSizeMenu();
+	printf("======================Menu list=====================\n");
+	printf("\n%-7s %-12s %-8s %-12s\n", "Id", "Name", "Price","Order");
+	for(int i = 0; i < size; ++i){
+		//if(menu[i] == NULL) break;
+		printf("%-7d %-12s %-8.2f %-12d\n",
+			menu[i]->id,
+			menu[i]->name,
+			menu[i]->price,
+			menu[i]->orders);
+
+//	for(int i = 0; menu[i] != NULL; ++i){
+//		printf("%d %s\n",menu[i]->id, menu[i]->name);
 	}
+	printf("=====================================================\n");
+
 }
 
 int simulation(int clients){
@@ -218,10 +231,10 @@ void *getShmat(int size){
 	int shmid;
 	menuItem *items;
 	
-	key = ftok(".", 1234);
+	key = ftok("/tmp", 1234);
 	if (key == -1)
 		close_program("ftok returned error");
-	shmid = shmget(key, SIZE_MENUITEM, IPC_EXCL | 0666);
+	shmid = shmget(key, SIZE_MENUITEM, IPC_CREAT | 0666);
 	if (shmid == -1)
 		close_program("shmget returned error");
 	items = shmat(shmid,NULL,0);
