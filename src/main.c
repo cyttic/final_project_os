@@ -45,7 +45,7 @@ int main(int argc , char ** argv){
 	for(int i = 0; i < count_waiters; ++i)
 		pthread_join(waiters_th[i],NULL);
 	printMenu(getMenu());
-	printThreadMessage("%f Total orders %d, for an amount %.2f NIL\n",getTimeWork(), getCountItems(), getTotal());
+	printThreadMessage("Total orders %d, for an amount %.2f NIL\n",getCountItems(), getTotal());
 	printThreadMessage("%f Main ID %d end work\n",getTimeWork(), getpid());
 	printThreadMessage("%f End of simulation\n");
 	return 0;

@@ -257,7 +257,7 @@ float getTotal(){
 	float total = 0.0;
 	menuItem **menu = getMenu();
 	for(int i = 0; i < getSizeMenu(); ++i)
-		total += menu[i]->price + menu[i]->orders;
+		total += menu[i]->price * menu[i]->orders;
 	return total;
 
 }
