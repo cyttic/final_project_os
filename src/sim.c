@@ -269,3 +269,11 @@ int getCountItems(){
 		total += menu[i]-> orders;
 	return total;
 }
+
+void foo_client(){
+	printThreadMessage("THIS IS MESSAGE FROM CLIENT");
+}
+
+void foo_waiter(){
+	printThreadMessage("THIS IS MESSAGE FROM WAITER");
+}

@@ -43,3 +43,6 @@ void printThreadMessage(const char*, ...);
 //count result
 float getTotal();
 int getCountItems();
+//client and waiter process
+void foo_client();
+void foo_waiter();
