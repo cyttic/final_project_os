@@ -312,16 +312,17 @@ int semid_sim;
 struct sembuf sb_sim;
 unsigned short sem_values_sim[1] = {1};
 void initSemSim(){
-	semid_sim = semget(1237,1, IPC_CREAT | 0666);
-	semctl(semid_sim,0, SETALL, sem_values_sim);
+	semid_sim = semget(123779,1, IPC_CREAT | 0666);
+	if (semid_sim == -1)
+		close_program("Error initialise semid_sim in funciton initSemSim\n");
+	if (semctl(semid_sim,0, SETALL, sem_values_sim) == -1)
+		close_program("Error semctl in funciton initSemSim\n");
 }
 
 void foo_client(int num){
 	printThreadMessage("%.3f Customer %d: created PID %llu PPID %d\n", getTimeWork(),num,getpid(),getppid());
 	//a)if not elapsed simulation time
 	while(isSimWorks()){
-		sleep(2);
-		
 		//b)sleep for 3 to 6 seconds randomly
 		int time_sleep = real_random()%6+3;
 		
@@ -383,13 +384,39 @@ void foo_client(int num){
 	printThreadMessage("%.3f Customer ID %d: PID %llu end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
 }
 
-void foo_waiter(){
-	while(controlSim()){
-		//printThreadMessage("THIS IS MESSAGE FROM WAITER\n");
-		//printMenu(getMenu());
-		sleep(1);
+void foo_waiter(int num){
+	printThreadMessage("%.3f Waiter %d: created PID %d PPID %d\n", getTimeWork(),num,getpid(),getppid());
+	//a)if not elapsed simulation time
+	while(isSimWorks()){
+		//b)sleep for 1-2 seconds randomly
+		sleep(1+real_random()%2);
+		//c)read an order from the "order board"
+		//sem lock
+		sb_sim.sem_num = 0;
+		sb_sim.sem_op = -1;
+		sb_sim.sem_flg = 0;
+		semop(semid_sim,&sb_sim,1);
+		
+		orderItem **orders = getOrderBoard();
+		//for(int i = 0;i < 
+		int i = 0;
+		while(orders[i] != NULL){
+			//d) and e): if there is row that isn't Done
+			if (orders[i]->done == 0){
+				//i)add the amount ordered to the totals in main menu
+				getMenu()[orders[i]->itemId]->orders += orders[i]->amount;
+				//ii)mark the order as Done
+				orders[i]->done = 1;
+				printThreadMessage("%.3f Waiter %d: performs the order of customer ID %d (%d %s)\n", getTimeWork(), num,i,orders[i]->amount, getMenu()[orders[i]->itemId]->name);
+				break;//we need to give work for other waiters if performed at least one order
+			}
+			i++;
+		}
+		//sem unlock
+		sb_sim.sem_op = 1;
+		semop(semid_sim,&sb_sim,1);
 	}
-	exit(0);
+	printThreadMessage("%.3f Waiter ID %d: PID %d end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
 }
 
 void initTimerEndSim(int time){

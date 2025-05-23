@@ -51,7 +51,7 @@ float getTotal();
 int getCountItems();
 //client and waiter process
 void foo_client(int num);
-void foo_waiter();
+void foo_waiter(int num);
 
 void initTimerEndSim(int time);
 int real_random();

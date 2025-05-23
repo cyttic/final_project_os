@@ -36,22 +36,22 @@ int main(int argc , char ** argv){
 	//initialization a clients threads
 	printThreadMessage("%.3f Main process start creating sub-process\n", getTimeWork());
 	//using type "long" in the loop For to avoid a warings
-	pid_t pid[count_clients];
+	pid_t pid_arr_cl[count_clients];
 	for(long i = 0; i < count_clients; ++i){
 		//int id = fork();
-		if ((pid[i] = fork()) == 0){
+		if ((pid_arr_cl[i] = fork()) == 0){
 			foo_client(i);
 			exit(i);
 		}else{
 			//wait(NULL);
 		}
 	}
-	printf("we are here\n");
 	
+	pid_t pid_arr_waiters[count_waiters];
 	for(long i = 0; i < count_waiters; ++i){
 		//int id = fork();
-		if (fork() == 0){
-			foo_waiter();
+		if ((pid_arr_waiters[i] = fork()) == 0){
+			foo_waiter(i);
 			exit(i);
 		}else{
 			//wait(NULL);
@@ -60,7 +60,9 @@ int main(int argc , char ** argv){
 
 	pid_t stat;
 	for(int i= 0; i< count_clients; ++i)
-		waitpid(pid[i], &stat,0);
+		waitpid(pid_arr_cl[i], &stat,0);
+	for(int i = 0; i < count_waiters; ++i)
+		waitpid(pid_arr_waiters[i], &stat,0);
 
 	/*
 	for(long i = 0; i < count_clients; ++i)
@@ -76,7 +78,7 @@ int main(int argc , char ** argv){
 		*/
 
 
-	//printMenu(getMenu());
+	printMenu(getMenu());
 	printThreadMessage("Total orders %d, for an amount %.2f NIL\n",getCountItems(), getTotal());
 	printThreadMessage("%.3f Main ID %d end work\n",getTimeWork(), getpid());
 	printThreadMessage("%.3f End of simulation\n");
