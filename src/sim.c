@@ -278,7 +278,7 @@ void foo_client(){
 void foo_waiter(){
 	while(controlSim()){
 		//printThreadMessage("THIS IS MESSAGE FROM WAITER\n");
-		printMenu(getMenu());
+		printThreadMessage(getMenu());
 		sleep(1);
 	}
 }
