@@ -32,10 +32,11 @@ float getTime();
 void *th_foo_client(void *);
 void *th_foo_waiter(void *);
 
-void alarmEndSimulation();
-int isSimWorks();
 void stopSim();
-int controlSim(int);
+int controlSim();
+void initTimerSim();
+int isSimWorks();
+
 //create a shared memory for struct menu
 void *getShmat(int);
 //display to output must be thread-safe operation
@@ -46,3 +47,5 @@ int getCountItems();
 //client and waiter process
 void foo_client();
 void foo_waiter();
+
+void initTimerEndSim(int time);

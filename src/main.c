@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
+#include <wait.h>
+#include <sys/mman.h>
 #include "sim.h"
 #include "timer.h"
 
@@ -20,8 +22,9 @@ int main(int argc , char ** argv){
 	int count_waiters   = atoi(argv[4]);
 
 	//we're using signal SIGALRM to hande function for stop clients and waiters threads
-	signal(SIGALRM, alarmEndSimulation);
-	alarm(time_simulation);
+	//ignal(SIGALRM, alarmEndSimulation);
+	//alarm(time_simulation);
+	initTimerEndSim(time_simulation);
 
 	pthread_t waiters_th[count_waiters];
 	pthread_t clients_th[count_clients];
@@ -33,16 +36,32 @@ int main(int argc , char ** argv){
 	//initialization a clients threads
 	printThreadMessage("%.3f Main process start creating sub-process\n", getTimeWork());
 	//using type "long" in the loop For to avoid a warings
-	for(long i = 0; i < count_client; ++i){
-		int id = fork();
-		if (id == 0){
+	pid_t pid[count_clients];
+	for(long i = 0; i < count_clients; ++i){
+		//int id = fork();
+		if ((pid[i] = fork()) == 0){
 			foo_client();
-			exit();
+			exit(i);
 		}else{
-			wait(NULL);
+			//wait(NULL);
 		}
 	}
+	printf("we are here\n");
 	
+	for(long i = 0; i < count_waiters; ++i){
+		//int id = fork();
+		if (fork() == 0){
+			foo_waiter();
+			exit(i);
+		}else{
+			//wait(NULL);
+		}
+	}
+
+	pid_t stat;
+	for(int i= 0; i< count_clients; ++i)
+		waitpid(pid[i], &stat,0);
+
 	/*
 	for(long i = 0; i < count_clients; ++i)
 		pthread_create(&clients_th[i], NULL, th_foo_client,(void*)i);

@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <sys/shm.h>
 #include <stdarg.h>
+#include <sys/mman.h>
 #include "timer.h"
 #include "sim.h"
 
@@ -115,35 +116,28 @@ void close_program(char *msg){
 	exit(-3);
 }
 
-void alarmEndSimulation(){
-	controlSim(0);
-}
-
 /*
 float getTime(){
 	static float internal_timer = (float)clock();
 	internal_timer = internal_timer/CLOCKS_PER_SEC;
 }
 */
-
-pthread_mutex_t mutex_stop_sim;
-int isSimWorks(){
-	int justCheckSim = 1;
-	return controlSim(justCheckSim);
-}
-
+static int *timerSim;
 void stopSim(){
-	controlSim(0);
+	*timerSim = 0;
 }
 
-int controlSim(int val){
-	static int sim_status = 1;
-	if(val == 0){//we need to stop simulation and need to use mutex to change variable status
-		pthread_mutex_lock(&mutex_stop_sim);
-		sim_status = val;
-		pthread_mutex_unlock(&mutex_stop_sim);
-	}
-	return sim_status;
+void initTimerSim(){
+	timerSim = mmap(NULL, sizeof *timerSim, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1,0);
+	*timerSim = 1;
+}
+
+int controlSim(){
+	return *timerSim;
+}
+
+int isSimWorks(){
+	return *timerSim;
 }
 
 pthread_mutex_t mutex_client_waiter;
@@ -271,9 +265,26 @@ int getCountItems(){
 }
 
 void foo_client(){
-	printThreadMessage("THIS IS MESSAGE FROM CLIENT");
+	while(controlSim()){
+		//printThreadMessage("THIS IS MESSAGE FROM CLIENT\n");
+		sleep(1);
+	}
 }
 
 void foo_waiter(){
-	printThreadMessage("THIS IS MESSAGE FROM WAITER");
+	while(controlSim()){
+		//printThreadMessage("THIS IS MESSAGE FROM WAITER\n");
+		sleep(1);
+	}
+}
+
+void initTimerEndSim(int time){
+	//create timer to end simulation in child process
+	initTimerSim();
+	if (fork() == 0){
+		sleep(time);
+		stopSim();
+		printf("STOP SIM\n");
+		exit(0);
+	}
 }
