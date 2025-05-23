@@ -11,6 +11,7 @@
 #include "sim.h"
 
 //function with symbol _ are for internal use only!
+//static menuItem **items;
 menuItem** _controlMenu(int size){
 	static menuItem **items;
 	if (size >= 1){//size less of 0 means there is setMenu call
@@ -20,9 +21,11 @@ menuItem** _controlMenu(int size){
 		char names[7][10] = {"Pizza","Salad","Hamburger","Spagetti","Pie","Milkshake","Falafel"};
 		//menuItem **items = malloc(sizeof(menuItem*)*size);
 		//We need to use shared memory according the task, but in this realisation we're using threads instead of a process, and it would be fine without it
-		items = getShmat(sizeof(menuItem**));
+		//items = getShmat(sizeof(menuItem**));
+		items = malloc(sizeof(menuItem**));
 		for(int i = 0; i < size; ++i){
-			items[i] = malloc(sizeof(menuItem*));
+			//items[i] = malloc(sizeof(menuItem*));
+			items[i] = mmap(NULL, sizeof *items[i], PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1,0);
 			items[i]->id = i+1;//just set up id of items in the loop
 			items[i]->price = rand()%20 + 3;//set up price for item via rand
 			items[i]->name = malloc(sizeof(names[i])+1);
@@ -267,6 +270,7 @@ int getCountItems(){
 void foo_client(){
 	while(controlSim()){
 		//printThreadMessage("THIS IS MESSAGE FROM CLIENT\n");
+		getMenu()[2]->orders++;
 		sleep(1);
 	}
 }
@@ -274,6 +278,7 @@ void foo_client(){
 void foo_waiter(){
 	while(controlSim()){
 		//printThreadMessage("THIS IS MESSAGE FROM WAITER\n");
+		printMenu(getMenu());
 		sleep(1);
 	}
 }
