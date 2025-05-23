@@ -4,7 +4,6 @@
 #include <signal.h>
 #include <stdlib.h>
 #include <wait.h>
-#include <sys/mman.h>
 #include "sim.h"
 #include "timer.h"
 
@@ -30,6 +29,7 @@ int main(int argc , char ** argv){
 	pthread_t clients_th[count_clients];
 	//create menu
 	setMenu(size_menu);
+	initSemPrint();
 	printMenu(getMenu());
 	//create orders board
 	setOrderBoard(count_clients);
@@ -40,7 +40,7 @@ int main(int argc , char ** argv){
 	for(long i = 0; i < count_clients; ++i){
 		//int id = fork();
 		if ((pid[i] = fork()) == 0){
-			foo_client();
+			foo_client(i);
 			exit(i);
 		}else{
 			//wait(NULL);
@@ -76,7 +76,7 @@ int main(int argc , char ** argv){
 		*/
 
 
-	printMenu(getMenu());
+	//printMenu(getMenu());
 	printThreadMessage("Total orders %d, for an amount %.2f NIL\n",getCountItems(), getTotal());
 	printThreadMessage("%.3f Main ID %d end work\n",getTimeWork(), getpid());
 	printThreadMessage("%.3f End of simulation\n");

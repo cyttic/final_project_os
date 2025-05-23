@@ -7,6 +7,8 @@
 #include <sys/shm.h>
 #include <stdarg.h>
 #include <sys/mman.h>
+#include <sys/sem.h>
+#include <sys/types.h>
 #include "timer.h"
 #include "sim.h"
 
@@ -52,7 +54,8 @@ orderItem** _controlOrderBoard(int size){
 		//we use threads, so we can get just malloc to allocate memory 
 		items = malloc(sizeof(orderItem*)*size);
 		for(int i = 0; i < size; ++i){
-			items[i] = malloc(sizeof(orderItem*));
+			//items[i] = malloc(sizeof(orderItem*));
+			items[i] = mmap(NULL, sizeof *items[i], PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1,0);
 			items[i]->customerId = i;
 			items[i]->itemId = -1; //newermind
 			items[i]->amount = -1; //newermind
@@ -88,13 +91,35 @@ int getSizeMenu(){
 	return _controlSizeMenu(-1);
 }
 
+int semid_printMenu;
+struct sembuf sb_printMenu;
+unsigned short sem_values_printMenu[1] = {1};
+
+void initSemPrint(){
+	semid_printMenu = semget(1235,1, IPC_CREAT | 0666);
+	semctl(semid_printMenu,0, SETALL, sem_values_printMenu);
+}
+
 void printMenu(menuItem **menu){
 	int size = getSizeMenu();
-	printf("======================Menu list=====================\n");
-	printf("%-7s %-12s %-8s %-12s\n", "Id", "Name", "Price","Order");
+	
+	/*
+	int semid;
+	struct sembuf sb;
+	unsigned short sem_values[1] = {1};
+	semid = semget(1235,1,IPC_CREAT | 0666);
+	semctl(semid,0,SETALL,sem_values);
+	*/
+	sb_printMenu.sem_num = 0;
+	sb_printMenu.sem_op = -1;
+	sb_printMenu.sem_flg = 0;
+	semop(semid_printMenu,&sb_printMenu,1);
+
+	printThreadMessage("======================Menu list=====================\n");
+	printThreadMessage("%-7s %-12s %-8s %-12s\n", "Id", "Name", "Price","Order");
 	for(int i = 0; i < size; ++i){
 		//if(menu[i] == NULL) break;
-		printf("%-7d %-12s %-8.2f %-12d\n",
+		printThreadMessage("%-7d %-12s %-8.2f %-12d\n",
 			menu[i]->id,
 			menu[i]->name,
 			menu[i]->price,
@@ -103,8 +128,9 @@ void printMenu(menuItem **menu){
 //	for(int i = 0; menu[i] != NULL; ++i){
 //		printf("%d %s\n",menu[i]->id, menu[i]->name);
 	}
-	printf("=====================================================\n");
-
+	printThreadMessage("=====================================================\n");
+	sb_printMenu.sem_op = 1;
+	semop(semid_printMenu,&sb_printMenu,1);
 }
 
 int simulation(int clients){
@@ -146,7 +172,7 @@ int isSimWorks(){
 pthread_mutex_t mutex_client_waiter;
 void *th_foo_client(void *thread_id){
 	long num = (long)thread_id;
-	printThreadMessage("%.3f Customer %d: created PID %llu PPID %d\n", getTimeWork(),num,pthread_self(),getppid());
+	printThreadMessage("%.3f Customer %d: created PID %llu PPID %d\n", getTimeWork(),num,getpid(),getppid());
 	//a)if not elapsed simulation time
 	while(isSimWorks()){
 		sleep(2);
@@ -191,12 +217,12 @@ void *th_foo_client(void *thread_id){
 		}
 		
 	}
-	printThreadMessage("%.3f Customer ID %d: PID %llu end work PPID %d\n",num, getTimeWork(), pthread_self(), getppid());
+	printThreadMessage("%.3f Customer ID %d: PID %llu end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
 }
 
 void *th_foo_waiter(void *thread_id){
 	long num = (long)(thread_id);
-	printThreadMessage("%.3f Waiter %d: created PID %llu PPID %d\n", getTimeWork(),num,pthread_self(),getppid());
+	printThreadMessage("%.3f Waiter %d: created PID %llu PPID %d\n", getTimeWork(),num,getpid(),getppid());
 	//a)if not elapsed simulation time
 	while(isSimWorks()){
 		//b)sleep for 1-2 seconds randomly
@@ -219,7 +245,7 @@ void *th_foo_waiter(void *thread_id){
 		}
 		pthread_mutex_unlock(&mutex_client_waiter);
 	}
-	printThreadMessage("%.3f Waiter ID %d: PID %llu end work PPID %d\n",num, getTimeWork(), pthread_self(), getppid());
+	printThreadMessage("%.3f Waiter ID %d: PID %llu end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
 }
 
 
@@ -239,15 +265,29 @@ void *getShmat(int size){
 	return items;
 }
 
-pthread_mutex_t mutex_print;
+int semid_printTh;
+struct sembuf sb_printTh;
+unsigned short sem_values_printTh[1] = {1};
+void initPrintTh(){
+	semid_printTh = semget(1236,1, IPC_CREAT | 0666);
+	semctl(semid_printTh,0, SETALL, sem_values_printTh);
+}
+
+
 //using vprintf instead of printf much more ease to pass arguments to print out
 void printThreadMessage(const char *message, ...){
-	pthread_mutex_lock(&mutex_print);
+	sb_printTh.sem_num = 0;
+	sb_printTh.sem_op = -1;
+	sb_printTh.sem_flg = 0;
+	semop(semid_printTh,&sb_printTh,1);
+	
 	va_list args;
 	va_start(args,message);
 	vprintf(message,args);
 	va_end(args);
-	pthread_mutex_unlock(&mutex_print);
+	
+	sb_printTh.sem_op = 1;
+	semop(semid_printTh,&sb_printTh,1);
 }
 
 float getTotal(){
@@ -267,20 +307,89 @@ int getCountItems(){
 	return total;
 }
 
-void foo_client(){
-	while(controlSim()){
-		//printThreadMessage("THIS IS MESSAGE FROM CLIENT\n");
-		getMenu()[2]->orders++;
-		sleep(1);
+
+int semid_sim;
+struct sembuf sb_sim;
+unsigned short sem_values_sim[1] = {1};
+void initSemSim(){
+	semid_sim = semget(1237,1, IPC_CREAT | 0666);
+	semctl(semid_sim,0, SETALL, sem_values_sim);
+}
+
+void foo_client(int num){
+	printThreadMessage("%.3f Customer %d: created PID %llu PPID %d\n", getTimeWork(),num,getpid(),getppid());
+	//a)if not elapsed simulation time
+	while(isSimWorks()){
+		sleep(2);
+		
+		//b)sleep for 3 to 6 seconds randomly
+		int time_sleep = real_random()%6+3;
+		
+		sleep(time_sleep);
+		//c)Read the menu (1 second);
+		//d)If the previous order has not yet been done, loop to (a)
+		int isContinue = 0;
+		//sem lock
+		sb_sim.sem_num = 0;
+		sb_sim.sem_op = -1;
+		sb_sim.sem_flg = 0;
+		semop(semid_sim,&sb_sim,1);
+		
+		if(getOrderBoard()[num]->done == 0)
+			isContinue = 1;//it's need because need to unlock mutex before Continue
+		//sem unlock
+		sb_sim.sem_op = 1;
+		semop(semid_sim,&sb_sim,1);
+		
+		if (isContinue)
+			continue;
+		//e)with the probability 0.5 client will order 
+		if (rand()%2){
+			
+			//i)randomly choose item and amount
+			int item = rand()%getSizeMenu();
+			int amount = rand()%4+1;
+			char name_item[20];
+			//ii)write the order to the board
+			//sem lock
+			sb_sim.sem_num = 0;
+			sb_sim.sem_op = -1;
+			sb_sim.sem_flg = 0;
+			semop(semid_sim,&sb_sim,1);
+			getOrderBoard()[num]->itemId = item;
+			getOrderBoard()[num]->amount = amount;
+			getOrderBoard()[num]->done = 0;
+			strcpy(name_item, getMenu()[item]->name);
+			//sem unlock
+			sb_sim.sem_op = 1;
+			semop(semid_sim,&sb_sim,1);
+			
+			printThreadMessage("%.3f Customer %d: reads a menu about %s(ordered, amount %d)\n", getTimeWork(),num, name_item, amount);
+		}else{
+		//f)with the probability 0.5 client does not order
+		//we can choose random dish for this message, because it will not be ordered
+		char name_item[20];
+		
+		//pthread_mutex_lock(&mutex_client_waiter); 
+		strcpy(name_item, getMenu()[rand()%getSizeMenu()]->name);
+		//pthread_mutex_unlock(&mutex_client_waiter);
+		
+		printThreadMessage("%.3f Customer %d: reads a menu about %s(doesn't want to order)\n", getTimeWork(),num, name_item);
+		sleep(1);//there is sleep from (c)
+		//g)loop to (a)
+		}
+		
 	}
+	printThreadMessage("%.3f Customer ID %d: PID %llu end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
 }
 
 void foo_waiter(){
 	while(controlSim()){
 		//printThreadMessage("THIS IS MESSAGE FROM WAITER\n");
-		printThreadMessage(getMenu());
+		//printMenu(getMenu());
 		sleep(1);
 	}
+	exit(0);
 }
 
 void initTimerEndSim(int time){
@@ -292,4 +401,9 @@ void initTimerEndSim(int time){
 		printf("STOP SIM\n");
 		exit(0);
 	}
+}
+
+int real_random(){
+	srandom(time(0) ^ (getpid()<<16));
+	return rand();  
 }

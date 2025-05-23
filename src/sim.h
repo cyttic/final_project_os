@@ -25,6 +25,11 @@ int _controlSizeMenu(int);
 void setSizeMenu(int);
 int getSizeMenu();
 
+void initSemPrint();
+void initPrintTh();
+void initSemSim();
+
+
 void printMenu(menuItem**);
 void close_program(char *);
 float getTime();
@@ -45,7 +50,8 @@ void printThreadMessage(const char*, ...);
 float getTotal();
 int getCountItems();
 //client and waiter process
-void foo_client();
+void foo_client(int num);
 void foo_waiter();
 
 void initTimerEndSim(int time);
+int real_random();
