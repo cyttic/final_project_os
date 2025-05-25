@@ -46,6 +46,7 @@ int isSimWorks();
 void *getShmat(int);
 //display to output must be thread-safe operation
 void printThreadMessage(const char*, ...);
+void printOneThreadMessage(const char*, ...);
 //count result
 float getTotal();
 int getCountItems();

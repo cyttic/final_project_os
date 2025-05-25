@@ -1,4 +1,5 @@
 #include <time.h>
 
-struct timespec firstTime();
+struct timespec *firstTime();
 double getTimeWork();
+void initTimerSem();

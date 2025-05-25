@@ -34,19 +34,7 @@ menuItem** _controlMenu(int size){
 			items[i]->name = (char*)malloc(sizeof(names[i])+1);
 			strcpy(items[i]->name,names[i]);
 		}
-		/*
-		for(int i = 0; i < size; ++i){
-			items[i]->name = (char*)malloc(sizeof(names[i])+1);
-			strcpy(items[i]->name,names[i]);
-		}
-		*/
-		
 		items[size] = NULL;
-		//items[0]->name = malloc(sizeof(names[0])+1);
-		//strcpy(items[0]->name,names[0]);
-		
-		for(int i = 0; i < size; ++i)
-			printf("ITEM: %-13s\n", items[i]->name);
 	}
 	return items;
 }
@@ -111,7 +99,7 @@ unsigned short sem_values_printMenu[1] = {1};
 void initSemPrint(){
 	semid_printMenu = semget(1235,1, IPC_CREAT | 0666);
 	if (semid_printMenu == -1)
-		close_program("Error initialise semid_printTh in funciton initSemPrint\n");
+		close_program("Error initialise semid_printMenu in funciton initSemPrint\n");
 	if (semctl(semid_printMenu,0, SETALL, sem_values_printMenu) == -1)
 		close_program("Error semctl in funciton initSemPrint\n");
 }
@@ -279,7 +267,7 @@ int semid_printTh;
 struct sembuf sb_printTh;
 unsigned short sem_values_printTh[1] = {1};
 void initPrintTh(){
-	semid_printTh = semget(1236,1, IPC_CREAT | 0666);
+	semid_printTh = semget(12364,1, IPC_CREAT | 0666);
 	if (semid_printTh == -1)
 		close_program("Error initialise semid_printTh in funciton initPrintTh\n");
 	if (semctl(semid_printTh,0, SETALL, sem_values_printTh) == -1)
@@ -287,20 +275,12 @@ void initPrintTh(){
 }
 
 
-//using vprintf instead of printf much more ease to pass arguments to print out
-void printThreadMessage(const char *message, ...){
-	sb_printTh.sem_num = 0;
-	sb_printTh.sem_op = -1;
-	sb_printTh.sem_flg = 0;
-	semop(semid_printTh,&sb_printTh,1);
-	
+//this version to print out from semaphore block instead of thread-safe function to avoiding nested semaphores
+void printOneThreadMessage(const char *message, ...){
 	va_list args;
 	va_start(args,message);
 	vprintf(message,args);
 	va_end(args);
-	
-	sb_printTh.sem_op = 1;
-	semop(semid_printTh,&sb_printTh,1);
 }
 
 float getTotal(){
@@ -325,11 +305,44 @@ int semid_sim;
 struct sembuf sb_sim;
 unsigned short sem_values_sim[1] = {1};
 void initSemSim(){
-	semid_sim = semget(123779,1, IPC_CREAT | 0666);
+	semid_sim = semget(1230,1, IPC_CREAT | 0666);
 	if (semid_sim == -1)
 		close_program("Error initialise semid_sim in funciton initSemSim\n");
 	if (semctl(semid_sim,0, SETALL, sem_values_sim) == -1)
 		close_program("Error semctl in funciton initSemSim\n");
+}
+
+//using vprintf instead of printf much more ease to pass arguments to print out
+void printThreadMessage(const char *message, ...){
+	/*
+	sb_printTh.sem_num = 0;
+	sb_printTh.sem_op = -1;
+	sb_printTh.sem_flg = 0;
+	semop(semid_printTh,&sb_printTh,1);
+	
+	va_list args;
+	va_start(args,message);
+	vprintf(message,args);
+	va_end(args);
+	
+	sb_printTh.sem_op = 1;
+	semop(semid_printTh,&sb_printTh,1);
+	*/
+	
+	//sem lock
+	sb_sim.sem_num = 0;
+	sb_sim.sem_op = -1;
+	sb_sim.sem_flg = 0;
+	semop(semid_sim,&sb_sim,1);
+			
+	va_list args;
+	va_start(args,message);
+	vprintf(message,args);
+	va_end(args);
+	
+	//sem unlock
+	sb_sim.sem_op = 1;
+	semop(semid_sim,&sb_sim,1);
 }
 
 void foo_client(int num){
@@ -383,11 +396,7 @@ void foo_client(int num){
 		//f)with the probability 0.5 client does not order
 		//we can choose random dish for this message, because it will not be ordered
 		char name_item[20];
-		
-		//pthread_mutex_lock(&mutex_client_waiter); 
 		strcpy(name_item, getMenu()[rand()%getSizeMenu()]->name);
-		//pthread_mutex_unlock(&mutex_client_waiter);
-		
 		printThreadMessage("%.3f Customer %d: reads a menu about %s(doesn't want to order)\n", getTimeWork(),num, name_item);
 		sleep(1);//there is sleep from (c)
 		//g)loop to (a)
@@ -411,7 +420,6 @@ void foo_waiter(int num){
 		semop(semid_sim,&sb_sim,1);
 		
 		orderItem **orders = getOrderBoard();
-		//for(int i = 0;i < 
 		int i = 0;
 		while(orders[i] != NULL){
 			//d) and e): if there is row that isn't Done
@@ -420,9 +428,9 @@ void foo_waiter(int num){
 				getMenu()[orders[i]->itemId]->orders += orders[i]->amount;
 				//ii)mark the order as Done
 				orders[i]->done = 1;
-				printThreadMessage("%.3f Waiter %d: performs the order of customer ID %d (%d %s)\n", getTimeWork(), num,i,orders[i]->amount, getMenu()[orders[i]->itemId]->name);
+				printOneThreadMessage("%.3f Waiter %d: performs the order of customer ID %d (%d %s)\n", getTimeWork(), num,i,orders[i]->amount, getMenu()[orders[i]->itemId]->name);
 				break;//we need to give work for other waiters if performed at least one order
-			}
+			}	
 			i++;
 		}
 		//sem unlock
@@ -438,7 +446,6 @@ void initTimerEndSim(int time){
 	if (fork() == 0){
 		sleep(time);
 		stopSim();
-		printf("STOP SIM\n");
 		exit(0);
 	}
 }

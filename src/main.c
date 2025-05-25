@@ -24,6 +24,7 @@ int main(int argc , char ** argv){
 	//ignal(SIGALRM, alarmEndSimulation);
 	//alarm(time_simulation);
 	initTimerEndSim(time_simulation);
+	initTimerSem();
 
 	pthread_t waiters_th[count_waiters];
 	pthread_t clients_th[count_clients];
@@ -63,19 +64,6 @@ int main(int argc , char ** argv){
 		waitpid(pid_arr_cl[i], &stat,0);
 	for(int i = 0; i < count_waiters; ++i)
 		waitpid(pid_arr_waiters[i], &stat,0);
-
-	/*
-	for(long i = 0; i < count_clients; ++i)
-		pthread_create(&clients_th[i], NULL, th_foo_client,(void*)i);
-	for(long i = 0; i < count_waiters; ++i)
-		pthread_create(&waiters_th[i], NULL, th_foo_waiter,(void*)i);
-
-	for(int i = 0; i < count_clients; ++i)
-		pthread_join(clients_th[i],NULL);
-	
-	for(int i = 0; i < count_waiters; ++i)
-		pthread_join(waiters_th[i],NULL);
-		*/
 
 
 	printMenu(getMenu());
