@@ -25,6 +25,7 @@ int main(int argc , char ** argv){
 	//alarm(time_simulation);
 	initTimerEndSim(time_simulation);
 	initTimerSem();
+	initSharedTimer();
 
 	pthread_t waiters_th[count_waiters];
 	pthread_t clients_th[count_clients];
