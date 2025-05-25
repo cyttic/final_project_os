@@ -24,16 +24,29 @@ menuItem** _controlMenu(int size){
 		//menuItem **items = malloc(sizeof(menuItem*)*size);
 		//We need to use shared memory according the task, but in this realisation we're using threads instead of a process, and it would be fine without it
 		//items = getShmat(sizeof(menuItem**));
-		items = malloc(sizeof(menuItem**));
+		//items = malloc(sizeof(menuItem**));
+		items = malloc(sizeof(menuItem*) * size);
 		for(int i = 0; i < size; ++i){
-			//items[i] = malloc(sizeof(menuItem*));
+			//items[i] = malloc(sizeof(menuItem*)); // non thread-safe version
 			items[i] = mmap(NULL, sizeof *items[i], PROT_READ | PROT_WRITE, MAP_SHARED | MAP_ANONYMOUS, -1,0);
 			items[i]->id = i+1;//just set up id of items in the loop
 			items[i]->price = rand()%20 + 3;//set up price for item via rand
-			items[i]->name = malloc(sizeof(names[i])+1);
+			items[i]->name = (char*)malloc(sizeof(names[i])+1);
 			strcpy(items[i]->name,names[i]);
 		}
+		/*
+		for(int i = 0; i < size; ++i){
+			items[i]->name = (char*)malloc(sizeof(names[i])+1);
+			strcpy(items[i]->name,names[i]);
+		}
+		*/
+		
 		items[size] = NULL;
+		//items[0]->name = malloc(sizeof(names[0])+1);
+		//strcpy(items[0]->name,names[0]);
+		
+		for(int i = 0; i < size; ++i)
+			printf("ITEM: %-13s\n", items[i]->name);
 	}
 	return items;
 }
@@ -97,29 +110,26 @@ unsigned short sem_values_printMenu[1] = {1};
 
 void initSemPrint(){
 	semid_printMenu = semget(1235,1, IPC_CREAT | 0666);
-	semctl(semid_printMenu,0, SETALL, sem_values_printMenu);
+	if (semid_printMenu == -1)
+		close_program("Error initialise semid_printTh in funciton initSemPrint\n");
+	if (semctl(semid_printMenu,0, SETALL, sem_values_printMenu) == -1)
+		close_program("Error semctl in funciton initSemPrint\n");
 }
 
 void printMenu(menuItem **menu){
+	//NOTE: we don't need to use thread-sage function printThreadMessage because printMenu is used only on main process!!
 	int size = getSizeMenu();
 	
-	/*
-	int semid;
-	struct sembuf sb;
-	unsigned short sem_values[1] = {1};
-	semid = semget(1235,1,IPC_CREAT | 0666);
-	semctl(semid,0,SETALL,sem_values);
-	*/
 	sb_printMenu.sem_num = 0;
 	sb_printMenu.sem_op = -1;
 	sb_printMenu.sem_flg = 0;
 	semop(semid_printMenu,&sb_printMenu,1);
 
-	printThreadMessage("======================Menu list=====================\n");
-	printThreadMessage("%-7s %-12s %-8s %-12s\n", "Id", "Name", "Price","Order");
+	/*printThreadMessage*/printf("======================Menu list=====================\n");
+	/*printThreadMessage*/printf("%-7s %-12s %-8s %-12s\n", "Id", "Name", "Price","Order");
 	for(int i = 0; i < size; ++i){
 		//if(menu[i] == NULL) break;
-		printThreadMessage("%-7d %-12s %-8.2f %-12d\n",
+		/*printThreadMessage*/printf("%-7d %-12s %-8.2f %-12d\n",
 			menu[i]->id,
 			menu[i]->name,
 			menu[i]->price,
@@ -128,7 +138,7 @@ void printMenu(menuItem **menu){
 //	for(int i = 0; menu[i] != NULL; ++i){
 //		printf("%d %s\n",menu[i]->id, menu[i]->name);
 	}
-	printThreadMessage("=====================================================\n");
+	/*printThreadMessage*/printf("=====================================================\n");
 	sb_printMenu.sem_op = 1;
 	semop(semid_printMenu,&sb_printMenu,1);
 }
@@ -270,7 +280,10 @@ struct sembuf sb_printTh;
 unsigned short sem_values_printTh[1] = {1};
 void initPrintTh(){
 	semid_printTh = semget(1236,1, IPC_CREAT | 0666);
-	semctl(semid_printTh,0, SETALL, sem_values_printTh);
+	if (semid_printTh == -1)
+		close_program("Error initialise semid_printTh in funciton initPrintTh\n");
+	if (semctl(semid_printTh,0, SETALL, sem_values_printTh) == -1)
+		close_program("Error semctl in funciton initPrintTh\n");
 }
 
 
