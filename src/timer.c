@@ -120,7 +120,7 @@ double getTimeWork() {
 
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
-    double result = (now.tv_sec - tmr->tv_sec) + (now.tv_nsec - tmr->tv_nsec) / 1e9;
+    double result = (now.tv_sec - tmr->tv_sec) + (now.tv_nsec - tmr->tv_nsec) / 1000000.0;
 
     // unlock
     sb_timer.sem_op = 1;
