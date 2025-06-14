@@ -305,11 +305,13 @@ int semid_sim;
 struct sembuf sb_sim;
 unsigned short sem_values_sim[1] = {1};
 void initSemSim(){
-	semid_sim = semget(1230,1, IPC_CREAT | 0666);
+	semid_sim = semget(1230,2, IPC_CREAT | 0666);
 	if (semid_sim == -1)
 		close_program("Error initialise semid_sim in funciton initSemSim\n");
-	if (semctl(semid_sim,0, SETALL, sem_values_sim) == -1)
+	if (semctl(semid_sim,0, SETVAL, sem_values_sim) == -1)
 		close_program("Error semctl in funciton initSemSim\n");
+	if (semctl(semid_sim,1, SETVAL, sem_values_sim) == -1)
+		close_program("Error semctl print in funciton initSemSim\n");
 }
 
 //using vprintf instead of printf much more ease to pass arguments to print out
@@ -329,20 +331,26 @@ void printThreadMessage(const char *message, ...){
 	semop(semid_printTh,&sb_printTh,1);
 	*/
 	
+	/*
 	//sem lock
-	sb_sim.sem_num = 0;
+	sb_sim.sem_num = 1;
 	sb_sim.sem_op = -1;
 	sb_sim.sem_flg = 0;
 	semop(semid_sim,&sb_sim,1);
-			
+	*/
+		
+	
 	va_list args;
 	va_start(args,message);
 	vprintf(message,args);
 	va_end(args);
 	
+	/*
 	//sem unlock
 	sb_sim.sem_op = 1;
 	semop(semid_sim,&sb_sim,1);
+	*/
+	
 }
 
 void foo_client(int num){
@@ -414,13 +422,17 @@ void foo_waiter(int num){
 		sleep(1+real_random()%2);
 		//c)read an order from the "order board"
 		//sem lock
+		
 		sb_sim.sem_num = 0;
 		sb_sim.sem_op = -1;
 		sb_sim.sem_flg = 0;
 		semop(semid_sim,&sb_sim,1);
 		
 		orderItem **orders = getOrderBoard();
+		
 		int i = 0;
+		int amount = 0;
+		char name[20];
 		while(orders[i] != NULL){
 			//d) and e): if there is row that isn't Done
 			if (orders[i]->done == 0){
@@ -428,7 +440,9 @@ void foo_waiter(int num){
 				getMenu()[orders[i]->itemId]->orders += orders[i]->amount;
 				//ii)mark the order as Done
 				orders[i]->done = 1;
-				printOneThreadMessage("%.3f Waiter %d: performs the order of customer ID %d (%d %s)\n", getTimeWork(), num,i,orders[i]->amount, getMenu()[orders[i]->itemId]->name);
+				amount = orders[i]->amount;
+				strcpy(name,getMenu()[orders[i]->itemId]->name);
+				//printThreadMessage("%.3f Waiter %d: performs the order of customer ID %d (%d %s)\n", getTimeWork(), num,i,orders[i]->amount, getMenu()[orders[i]->itemId]->name);
 				break;//we need to give work for other waiters if performed at least one order
 			}	
 			i++;
@@ -436,6 +450,9 @@ void foo_waiter(int num){
 		//sem unlock
 		sb_sim.sem_op = 1;
 		semop(semid_sim,&sb_sim,1);
+		if (orders[i] != NULL)
+			printThreadMessage("%.3f Waiter %d: performs the order of customer ID %d (%d %s)\n", getTimeWork(), num,i,amount, name);
+		
 	}
 	printThreadMessage("%.3f Waiter ID %d: PID %d end work PPID %d\n",num, getTimeWork(), getpid(), getppid());
 }
