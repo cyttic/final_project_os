@@ -92,26 +92,9 @@ int getSizeMenu(){
 	return _controlSizeMenu(-1);
 }
 
-int semid_printMenu;
-struct sembuf sb_printMenu;
-unsigned short sem_values_printMenu[1] = {1};
-
-void initSemPrint(){
-	semid_printMenu = semget(1235,1, IPC_CREAT | 0666);
-	if (semid_printMenu == -1)
-		close_program("Error initialise semid_printMenu in funciton initSemPrint\n");
-	if (semctl(semid_printMenu,0, SETALL, sem_values_printMenu) == -1)
-		close_program("Error semctl in funciton initSemPrint\n");
-}
-
 void printMenu(menuItem **menu){
 	//NOTE: we don't need to use thread-sage function printThreadMessage because printMenu is used only on main process!!
 	int size = getSizeMenu();
-	
-	sb_printMenu.sem_num = 0;
-	sb_printMenu.sem_op = -1;
-	sb_printMenu.sem_flg = 0;
-	semop(semid_printMenu,&sb_printMenu,1);
 
 	/*printThreadMessage*/printf("======================Menu list=====================\n");
 	/*printThreadMessage*/printf("%-7s %-12s %-8s %-12s\n", "Id", "Name", "Price","Order");
@@ -122,20 +105,8 @@ void printMenu(menuItem **menu){
 			menu[i]->name,
 			menu[i]->price,
 			menu[i]->orders);
-
-//	for(int i = 0; menu[i] != NULL; ++i){
-//		printf("%d %s\n",menu[i]->id, menu[i]->name);
 	}
 	/*printThreadMessage*/printf("=====================================================\n");
-	sb_printMenu.sem_op = 1;
-	semop(semid_printMenu,&sb_printMenu,1);
-}
-
-int simulation(int clients){
-	while(clients > 0){
-		//we are still working untill we have at least one client;
-	}
-	return 0;
 }
 
 void close_program(char *msg){
@@ -143,12 +114,6 @@ void close_program(char *msg){
 	exit(-3);
 }
 
-/*
-float getTime(){
-	static float internal_timer = (float)clock();
-	internal_timer = internal_timer/CLOCKS_PER_SEC;
-}
-*/
 static int *timerSim;
 void stopSim(){
 	*timerSim = 0;
@@ -247,33 +212,6 @@ void *th_foo_waiter(void *thread_id){
 }
 
 
-void *getShmat(int size){
-	size_t SIZE_MENUITEM = size;
-	key_t key;
-	int shmid;
-	menuItem *items;
-	
-	key = ftok("/tmp", 1234);
-	if (key == -1)
-		close_program("ftok returned error");
-	shmid = shmget(key, SIZE_MENUITEM, IPC_CREAT | 0666);
-	if (shmid == -1)
-		close_program("shmget returned error");
-	items = shmat(shmid,NULL,0);
-	return items;
-}
-
-int semid_printTh;
-struct sembuf sb_printTh;
-unsigned short sem_values_printTh[1] = {1};
-void initPrintTh(){
-	semid_printTh = semget(12364,1, IPC_CREAT | 0666);
-	if (semid_printTh == -1)
-		close_program("Error initialise semid_printTh in funciton initPrintTh\n");
-	if (semctl(semid_printTh,0, SETALL, sem_values_printTh) == -1)
-		close_program("Error semctl in funciton initPrintTh\n");
-}
-
 
 //this version to print out from semaphore block instead of thread-safe function to avoiding nested semaphores
 void printOneThreadMessage(const char *message, ...){
@@ -316,40 +254,20 @@ void initSemSim(){
 
 //using vprintf instead of printf much more ease to pass arguments to print out
 void printThreadMessage(const char *message, ...){
-	/*
-	sb_printTh.sem_num = 0;
-	sb_printTh.sem_op = -1;
-	sb_printTh.sem_flg = 0;
-	semop(semid_printTh,&sb_printTh,1);
-	
-	va_list args;
-	va_start(args,message);
-	vprintf(message,args);
-	va_end(args);
-	
-	sb_printTh.sem_op = 1;
-	semop(semid_printTh,&sb_printTh,1);
-	*/
-	
-	/*
 	//sem lock
 	sb_sim.sem_num = 1;
 	sb_sim.sem_op = -1;
 	sb_sim.sem_flg = 0;
 	semop(semid_sim,&sb_sim,1);
-	*/
 		
-	
 	va_list args;
 	va_start(args,message);
 	vprintf(message,args);
 	va_end(args);
 	
-	/*
 	//sem unlock
 	sb_sim.sem_op = 1;
 	semop(semid_sim,&sb_sim,1);
-	*/
 	
 }
 
@@ -361,6 +279,8 @@ void foo_client(int num){
 		int time_sleep = real_random()%6+3;
 		
 		sleep(time_sleep);
+		if (!isSimWorks())
+			break;//the restoraunt was closed waiter a client was sleeped
 		//c)Read the menu (1 second);
 		//d)If the previous order has not yet been done, loop to (a)
 		int isContinue = 0;
@@ -420,6 +340,8 @@ void foo_waiter(int num){
 	while(isSimWorks()){
 		//b)sleep for 1-2 seconds randomly
 		sleep(1+real_random()%2);
+		if (!isSimWorks())
+			break;//the restoraunt was closed waiter a client was sleeped
 		//c)read an order from the "order board"
 		//sem lock
 		
@@ -468,6 +390,26 @@ void initTimerEndSim(int time){
 }
 
 int real_random(){
+	//seed to random time sleep in every execute
 	srandom(time(0) ^ (getpid()<<16));
 	return rand();  
+}
+
+void clean_up_resourcecs(){
+	//clean up at a semaphores
+	semctl(semid_sim, 0, IPC_RMID);
+	//clean up at a shared memory
+	clean_up_timer();
+	munmap(timerSim, sizeof *timerSim);
+	menuItem **menu = getMenu();
+	for(int i = 0; i < getSizeMenu(); ++i)
+		munmap(menu[i], sizeof *menu[i]);
+	
+	int i = 0;
+	orderItem **orders = getOrderBoard();
+	while(orders[i++] != NULL)
+		munmap(orders[i], sizeof *orders[i]);
+	//clean up at simple memory
+	free(menu);
+	free(orders);
 }

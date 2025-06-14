@@ -25,7 +25,7 @@ int _controlSizeMenu(int);
 void setSizeMenu(int);
 int getSizeMenu();
 
-void initSemPrint();
+//void initSemPrint();
 void initPrintTh();
 void initSemSim();
 
@@ -56,3 +56,5 @@ void foo_waiter(int num);
 
 void initTimerEndSim(int time);
 int real_random();
+
+void clean_up_resourcecs();

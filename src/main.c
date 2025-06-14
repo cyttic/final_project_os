@@ -20,18 +20,12 @@ int main(int argc , char ** argv){
 	int count_clients   = atoi(argv[3]);
 	int count_waiters   = atoi(argv[4]);
 
-	//we're using signal SIGALRM to hande function for stop clients and waiters threads
-	//ignal(SIGALRM, alarmEndSimulation);
-	//alarm(time_simulation);
 	initTimerEndSim(time_simulation);
 	initTimerSem();
 	initSharedTimer();
 
-	pthread_t waiters_th[count_waiters];
-	pthread_t clients_th[count_clients];
 	//create menu
 	setMenu(size_menu);
-	initSemPrint();
 	printMenu(getMenu());
 	//create orders board
 	setOrderBoard(count_clients);
@@ -40,23 +34,19 @@ int main(int argc , char ** argv){
 	//using type "long" in the loop For to avoid a warings
 	pid_t pid_arr_cl[count_clients];
 	for(long i = 0; i < count_clients; ++i){
-		//int id = fork();
 		if ((pid_arr_cl[i] = fork()) == 0){
 			foo_client(i);
 			exit(i);
 		}else{
-			//wait(NULL);
 		}
 	}
 	
 	pid_t pid_arr_waiters[count_waiters];
 	for(long i = 0; i < count_waiters; ++i){
-		//int id = fork();
 		if ((pid_arr_waiters[i] = fork()) == 0){
 			foo_waiter(i);
 			exit(i);
 		}else{
-			//wait(NULL);
 		}
 	}
 
@@ -66,10 +56,10 @@ int main(int argc , char ** argv){
 	for(int i = 0; i < count_waiters; ++i)
 		waitpid(pid_arr_waiters[i], &stat,0);
 
-
 	printMenu(getMenu());
-	printThreadMessage("Total orders %d, for an amount %.2f NIL\n",getCountItems(), getTotal());
+	printThreadMessage("Total orders %d, for an amount %.2f NIS\n",getCountItems(), getTotal());
 	printThreadMessage("%.3f Main ID %d end work\n",getTimeWork(), getpid());
 	printThreadMessage("%.3f End of simulation\n");
+	clean_up_resourcecs();
 	return 0;
 }
