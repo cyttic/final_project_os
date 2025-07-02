@@ -11,15 +11,17 @@
 int main(int argc , char ** argv){
 	menuItem item;
 
-	if (argc != 5){
+	if (argc != 5){//проверяем количество аргументов
 		perror("It's must to be 4 argumetns!!\n");
 		return -3;
 	}
+	//конвертируем строки в числа
 	int time_simulation = atoi(argv[1]);
 	int size_menu       = atoi(argv[2]);
 	int count_clients   = atoi(argv[3]);
 	int count_waiters   = atoi(argv[4]);
 
+	//инициализация таймеров
 	initTimerEndSim(time_simulation);
 	initTimerSem();
 	initSharedTimer();
@@ -32,6 +34,7 @@ int main(int argc , char ** argv){
 	//initialization a clients threads
 	printThreadMessage("%.3f Main process start creating sub-process\n", getTimeWork());
 	//using type "long" in the loop For to avoid a warings
+	//запуск процессов клиентов
 	pid_t pid_arr_cl[count_clients];
 	for(long i = 0; i < count_clients; ++i){
 		if ((pid_arr_cl[i] = fork()) == 0){
@@ -40,7 +43,7 @@ int main(int argc , char ** argv){
 		}else{
 		}
 	}
-	
+	//запуск процессов официантов
 	pid_t pid_arr_waiters[count_waiters];
 	for(long i = 0; i < count_waiters; ++i){
 		if ((pid_arr_waiters[i] = fork()) == 0){
@@ -50,12 +53,14 @@ int main(int argc , char ** argv){
 		}
 	}
 
+	//ожидаем завершение выполнения всех процессов в соответствии с временем симуляции
 	pid_t stat;
 	for(int i= 0; i< count_clients; ++i)
 		waitpid(pid_arr_cl[i], &stat,0);
 	for(int i = 0; i < count_waiters; ++i)
 		waitpid(pid_arr_waiters[i], &stat,0);
 
+	//распечатка результата
 	printMenu(getMenu());
 	printThreadMessage("Total orders %d, for an amount %.2f NIS\n",getCountItems(), getTotal());
 	printThreadMessage("%.3f Main ID %d end work\n",getTimeWork(), getpid());

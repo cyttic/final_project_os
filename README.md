@@ -1,4 +1,7 @@
 #Operating Systems 2025 Project - Restaurant Simulation
+#Authours: 
+#	רומן ויכמן 348111014 
+#	יבגני ליאלין 347384281 
 
 
 #Project Overview
